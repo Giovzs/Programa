@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.*;
 
 public class GuessNumberGame extends JFrame {
     private int numberToGuess;
@@ -9,6 +10,9 @@ public class GuessNumberGame extends JFrame {
     private JTextField inputField;
     private JTextArea outputArea;
     private JButton restartButton;
+private String fileName = "C:/Users/giovanne.santos/Documents/NetBeansProjects/Programa/GuessNumberGame/data/saved_game.txt";
+
+
 
     public GuessNumberGame() {
         // Configurações da janela principal
@@ -28,6 +32,9 @@ public class GuessNumberGame extends JFrame {
         JButton guessButton = new JButton("Adivinhar");
         guessButton.addActionListener(new GuessButtonListener());
 
+        JButton saveButton = new JButton("Salvar");
+        saveButton.addActionListener(new SaveButtonListener());
+
         restartButton = new JButton("Reiniciar");
         restartButton.addActionListener(new RestartButtonListener());
         restartButton.setEnabled(false);
@@ -35,6 +42,7 @@ public class GuessNumberGame extends JFrame {
         topPanel.add(label);
         topPanel.add(inputField);
         topPanel.add(guessButton);
+        topPanel.add(saveButton);
         topPanel.add(restartButton);
 
         // Configurações da área de texto central
@@ -54,7 +62,14 @@ public class GuessNumberGame extends JFrame {
     }
 
     private void startNewGame() {
-        // Reinicia as variáveis e gera um novo número aleatório
+        if (isSavedGameAvailable()) {
+            int choice = JOptionPane.showConfirmDialog(this, "Existe um jogo salvo. Deseja carregá-lo?", "Jogo Salvo", JOptionPane.YES_NO_OPTION);
+            if (choice == JOptionPane.YES_OPTION) {
+                loadGame();
+                return;
+            }
+        }
+
         numberToGuess = (int) (Math.random() * 10) + 1;
         remainingAttempts = 3;
 
@@ -62,6 +77,36 @@ public class GuessNumberGame extends JFrame {
         inputField.setText("");
         restartButton.setEnabled(false);
         outputArea.setText("");
+    }
+
+    private void saveGame() {
+        try {
+            FileWriter fileWriter = new FileWriter(fileName);
+            PrintWriter printWriter = new PrintWriter(fileWriter);
+            printWriter.println(numberToGuess);
+            printWriter.println(remainingAttempts);
+            printWriter.close();
+            outputArea.append("Jogo salvo.\n");
+        } catch (IOException e) {
+            outputArea.append("Erro ao salvar o jogo.\n");
+            e.printStackTrace();
+        }
+    }
+
+    private void loadGame() {
+        try {
+            FileReader fileReader = new FileReader(fileName);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            numberToGuess = Integer.parseInt(bufferedReader.readLine());
+            remainingAttempts = Integer.parseInt(bufferedReader.readLine());
+            bufferedReader.close();
+            outputArea.append("Jogo carregado.\n");
+        } catch (FileNotFoundException e) {
+            outputArea.append("Nenhum jogo salvo encontrado.\n");
+        } catch (IOException e) {
+            outputArea.append("Erro ao carregar o jogo.\n");
+            e.printStackTrace();
+        }
     }
 
     private class GuessButtonListener implements ActionListener {
@@ -103,10 +148,21 @@ public class GuessNumberGame extends JFrame {
         }
     }
 
+    private class SaveButtonListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            saveGame();
+        }
+    }
+
     private class RestartButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             startNewGame();
         }
+    }
+
+    private boolean isSavedGameAvailable() {
+        File file = new File(fileName);
+        return file.exists();
     }
 
     public static void main(String[] args) {
